@@ -9,15 +9,18 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <iostream>
+#include <QEventLoop>
 
 class CTigerDemon : public QObject
 {
     Q_OBJECT
 public:
     explicit CTigerDemon(const QString& url, const QString& nameSoft, QObject* parent = nullptr);
+    bool checkUpdate();
 
 private:
     QNetworkAccessManager* manager;
+    QJsonObject contenuJSON;
 };
 
 #endif // CTIGERDEMON_H
