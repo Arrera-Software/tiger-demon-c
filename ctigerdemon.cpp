@@ -49,6 +49,16 @@ QString CTigerDemon::getVersionSoft(){
 }
 
 bool CTigerDemon::checkUpdate(){
+    QString versionInstalled = getVersionSoft();
+    QString lastVersion = contenuJSON["version"].toString();
 
-    return true;
+    if (versionInstalled != "IXXXX-XXX"){
+        if (versionInstalled != lastVersion){
+            return true;
+        }else{
+            return false;
+        }
+    }else{
+        return false;
+    }
 }
