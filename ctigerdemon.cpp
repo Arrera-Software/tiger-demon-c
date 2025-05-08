@@ -1,40 +1,46 @@
 #include "ctigerdemon.h"
+
+#include <QNetworkAccessManager>
+#include <QNetworkRequest>
+#include <QNetworkReply>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QEventLoop>
+#include <QUrl>
+
 using namespace std;
 
 CTigerDemon::CTigerDemon(const QString& url, const QString& nameSoft, QObject* parent)
     : QObject(parent)
 {
-    manager = new QNetworkAccessManager(this);
+    QNetworkAccessManager mgr(this);
+    QNetworkRequest req(url);             // <-- c'est bien le constructeur !
+    QNetworkReply* reply = mgr.get(req);
 
-    QNetworkReply* reply = manager->get(QNetworkRequest(QUrl(url)));
+    QEventLoop loop;
+    QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+    loop.exec();
 
-    cout << "Lancement de la requête..." << endl;
-
-    connect(reply, &QNetworkReply::finished, this, [=]() {
-        cout << "La réponse est revenue !" << endl;
-
-        if (reply->error() == QNetworkReply::NoError) {
-            QByteArray data = reply->readAll();
-            QJsonDocument doc = QJsonDocument::fromJson(data);
-            if (!doc.isObject()) {
-                cout << "Le JSON n'est pas un objet valide !" << endl;
-                reply->deleteLater();
-                return;
-            }
-
+    if (reply->error() == QNetworkReply::NoError) {
+        QByteArray data = reply->readAll();
+        QJsonDocument doc = QJsonDocument::fromJson(data);
+        if (doc.isObject()) {
             QJsonObject root = doc.object();
             if (root.contains(nameSoft) && root[nameSoft].isObject()) {
-                QJsonObject obj = root[nameSoft].toObject();
-                cout << "Objet récupéré pour " << nameSoft.toStdString() << ": ";
-                cout << QJsonDocument(obj).toJson(QJsonDocument::Indented).toStdString() << endl;
+                contenuJSON = root[nameSoft].toObject();
             } else {
-                cout << "Clé \"" << nameSoft.toStdString() << "\" absente ou non-objet !" << endl;
+                qDebug() << "[CTigerDemon] Le nom" << nameSoft << "n'est pas trouvé dans le JSON.";
             }
         } else {
-            cout << "Erreur réseau : " << reply->errorString().toStdString() << endl;
+            qDebug() << "[CTigerDemon] Le document JSON n'est pas un objet.";
         }
-        reply->deleteLater();
-        // Quitter l'app console après la réponse (facultatif)
-        QCoreApplication::quit();
-    });
+    } else {
+        qWarning() << "[CTigerDemon] Erreur réseau : " << reply->errorString();
+    }
+    reply->deleteLater();
+}
+
+bool CTigerDemon::checkUpdate(){
+    cout << contenuJSON["version"].toString().toStdString() << endl;
+    return true;
 }
