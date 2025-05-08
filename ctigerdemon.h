@@ -10,6 +10,8 @@
 #include <QJsonObject>
 #include <iostream>
 #include <QEventLoop>
+#include <QFile>
+#include <QTextStream>
 
 class CTigerDemon : public QObject
 {
@@ -17,7 +19,7 @@ class CTigerDemon : public QObject
 public:
     explicit CTigerDemon(const QString& url, const QString& nameSoft, QObject* parent = nullptr);
     bool checkUpdate();
-
+    QString getVersionSoft();
 private:
     QNetworkAccessManager* manager;
     QJsonObject contenuJSON;
